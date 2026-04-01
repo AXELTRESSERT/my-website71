@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRFAN TOOLS | V1</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
+        body { background: #000; color: #0f0; }
+        .hidden { display: none !important; }
+
+        /* LOGIN */
+        #login-screen { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .login-box { border: 1px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 15px #0f0; width: 320px; }
+        input { background: #000; border: 1px solid #0f0; color: #0f0; padding: 12px; margin: 10px 0; width: 100%; outline: none; }
+        button { background: #0f0; color: #000; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; text-transform: uppercase; }
+
+        /* DASHBOARD */
+        #main-dashboard { padding: 40px; }
+        .menu-list { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+        .menu-card { border: 1px solid #0f0; padding: 25px; cursor: pointer; background: #0a0a0a; min-width: 200px; text-align: center; }
+        .menu-card:hover { background: #0f0; color: #000; box-shadow: 0 0 20px #0f0; }
+
+        /* TOOLS UI */
+        .tool-screen { padding: 20px; max-width: 1000px; margin: auto; }
+        .box { border: 1px solid #0f0; padding: 20px; margin-bottom: 15px; background: #0a0a0a; }
+        .input-inline { display: flex; gap: 10px; margin-top: 10px; }
+        .input-inline input { flex: 1; margin: 0; }
+        .input-inline button { width: auto; padding: 0 20px; }
+
+        #output { background: #000; border: 1px solid #0f0; padding: 20px; white-space: pre-wrap; color: #00ffff; font-size: 14px; height: 500px; overflow-y: auto; }
+        .btn-back { background: #333; color: #fff; padding: 8px 20px; margin-bottom: 20px; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="margin-bottom: 15px;">TOOLS BY IRFAN</h2>
+            <input type="text" id="userIn" placeholder="Username">
+            <input type="password" id="passIn" placeholder="Password">
+            <button onclick="doLogin()">acces</button>
+        </div>
+    </div>
+
+    <div id="main-dashboard" class="hidden">
+        <div class="header" style="border-bottom: 1px solid #0f0; padding-bottom: 10px; margin-bottom: 20px;">
+            <h1>IRFAN-TOOLS <span style="color: yellow;">[version: 1.0]</span></h1>
+            <p id="cid-display" style="font-size: 12px; color: #0ff;"></p>
+        </div>
+        <h3>Select Dashboard:</h3>
+        <div class="menu-list">
+            <div class="menu-card" onclick="openTool('tiktok')">Tiktok Stalker</div>
+            <div class="menu-card" onclick="openTool('roblox')">Roblox Stalker</div>
+        </div>
+    </div>
+
+    <div id="tool-screen" class="hidden tool-screen">
+        <button class="btn-back" onclick="backToDash()">BACK</button>
+        <div class="box">
+            <h2 id="tool-title">TOOL_NAME</h2>
+            <label>enterName:</label>
+            <div class="input-inline">
+                <input type="text" id="targetName" placeholder="Target username...">
+                <button onclick="executeAction()">CEK</button>
+            </div>
+        </div>
+        <div style="background:#111; border:1px solid #0f0; border-bottom:none; padding:5px 15px; font-size:12px; color:yellow;">TERMINAL</div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let clientID = "";
+        let currentTool = "";
+
+        async function doLogin() {
+            const user = document.getElementById('userIn').value;
+            const pass = document.getElementById('passIn').value;
+            if(!user || !pass) return alert("Isi dulu!");
+            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: user}) });
+            const data = await res.json();
+            if(data.status) {
+                clientID = data.clientId;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-dashboard').classList.remove('hidden');
+                document.getElementById('cid-display').innerText = `CLIENT_ID: ${clientID} | USER: ${user}`;
+            }
+        }
+
+        function openTool(type) {
+            currentTool = type;
+            document.getElementById('tool-title').innerText = type.toUpperCase() + "_StalkerBy-irfan";
+            document.getElementById('main-dashboard').classList.add('hidden');
+            document.getElementById('tool-screen').classList.remove('hidden');
+            document.getElementById('output').innerText = "System Ready for " + type;
+        }
+
+        function backToDash() {
+            document.getElementById('tool-screen').classList.add('hidden');
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('targetName').value = "";
+        }
+
+        async function executeAction() {
+            const target = document.getElementById('targetName').value;
+            const out = document.getElementById('output');
+            if(!target) return alert("Username kosong!");
+
+            out.innerText = `[+] Initiating ${currentTool} stalk for: @${target}...`;
+            const endpoint = currentTool === 'tiktok' ? '/api/stalk' : '/api/roblox';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: target, clientId: clientID })
+                });
+                const data = await res.json();
+                out.innerText = data.status ? data.output : data.msg;
+            } catch (e) { out.innerText = "[-] Error connection."; }
+            out.scrollTop = out.scrollHeight;
+        }
+    </script>
+</body>
+</html>
